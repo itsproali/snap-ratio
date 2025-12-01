@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  font-family: "Inter";
+}
+
 #plasmo-shadow-container {
   all: initial;
   box-sizing: border-box;

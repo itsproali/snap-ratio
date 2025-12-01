@@ -1,9 +1,9 @@
 {
   "name": "snap-ratio",
   "displayName": "Snap ratio",
-  "version": "0.0.1",
-  "description": "A basic Plasmo extension.",
-  "author": "(Mohammad Ali <itsproali@gmail.com>)",
+  "version": "1.0.0",
+  "description": "Capture perfect 16:9 frames, auto-resize, compress, and download polished thumbnails in one click.",
+  "author": "Mohammad Ali <itsproali@gmail.com>",
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
@@ -13,6 +13,7 @@
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-rnd": "^10.4.0",
     "tailwindcss": "3.4.1"
   },
   "devDependencies": {
@@ -26,8 +27,15 @@
     "typescript": "5.3.3"
   },
   "manifest": {
+    "permissions": [
+      "tabs",
+      "activeTab",
+      "downloads",
+      "scripting"
+    ],
     "host_permissions": [
-      "https://*/*"
+      "https://*/*",
+      "http://*/*"
     ]
   }
 }
