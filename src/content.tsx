@@ -6,9 +6,6 @@ import { Rnd } from "react-rnd"
 export const config: PlasmoCSConfig = {
   matches: [
     "http://localhost/*",
-    "http://127.0.0.1/*",
-    "https://localhost/*",
-    "https://127.0.0.1/*"
   ]
 }
 
@@ -70,8 +67,10 @@ const SelectionOverlay = ({
   const getDefaultPosition = (width: number, height: number) => {
     // Center the selection box in the viewport
     return {
-      x: (window.innerWidth - width) / 2,
-      y: (window.innerHeight - height) / 2
+      // x: (window.innerWidth - width) / 2,
+      // y: (window.innerHeight - height) / 2
+      x: 325,
+      y: 78
     }
   }
 
@@ -363,11 +362,10 @@ const DownloadUI = ({
         {/* Compression Status */}
         {compression && (
           <div
-            className={`mb-4 p-3 rounded-md text-sm ${
-              compression.compressed
-                ? "bg-green-50 border border-green-200 text-green-800"
-                : "bg-yellow-50 border border-yellow-200 text-yellow-800"
-            }`}>
+            className={`mb-4 p-3 rounded-md text-sm ${compression.compressed
+              ? "bg-green-50 border border-green-200 text-green-800"
+              : "bg-yellow-50 border border-yellow-200 text-yellow-800"
+              }`}>
             {compression.compressed ? (
               <div>
                 <span className="font-semibold">✓ Compressed successfully</span>
@@ -519,8 +517,7 @@ const PlasmoOverlay = () => {
       console.error("Error capturing screenshot:", error)
       setIsProcessing(false)
       alert(
-        `Failed to capture screenshot: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to capture screenshot: ${error instanceof Error ? error.message : "Unknown error"
         }`
       )
       overlayState.show = true // Show overlay again on error
