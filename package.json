@@ -36,7 +36,7 @@
     "typescript": "5.9.3"
   },
   "manifest": {
-    "name": "Snap Ratio — Fixed-Ratio Screenshot Capture",
+    "name": "Snap Ratio - Fixed-Ratio Screenshot Capture",
     "short_name": "Snap Ratio",
     "minimum_chrome_version": "116",
     "permissions": [
