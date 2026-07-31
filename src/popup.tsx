@@ -472,6 +472,9 @@ function CaptureTab({
             />
           )}
           <SummaryRow label="After capture" value={afterCaptureLabel} />
+          {settings.remoteCompression && (
+            <SummaryRow label="Compression" value="iLoveIMG (uploads image)" />
+          )}
         </dl>
       </Card>
 

@@ -28,6 +28,7 @@ import {
   Toggle
 } from "./controls"
 import {
+  IconCloudUp,
   IconCrop,
   IconImage,
   IconPalette,
@@ -476,6 +477,46 @@ export function SettingsPanel({
           checked={settings.showGrid}
           onChange={(showGrid) => onChange({ showGrid })}
         />
+      </Section>
+
+      {/* ------------------------------------------------ remote compression */}
+      <Section
+        icon={<IconCloudUp />}
+        title="Extra compression"
+        description="Optional. Everything above happens on your device.">
+        <Toggle
+          label="Compress via iLoveIMG"
+          description="Uploads each capture to iloveimg.com for extra compression. Requires your own API key."
+          checked={settings.remoteCompression}
+          onChange={(remoteCompression) => onChange({ remoteCompression })}
+        />
+
+        {settings.remoteCompression && (
+          <>
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-2.5">
+              <p className="text-[11px] leading-snug text-amber-800">
+                <span className="font-semibold">Heads up:</span> with this on,
+                your screenshots leave your device and are uploaded to a
+                third-party service. Leave it off to keep every capture local.
+              </p>
+            </div>
+
+            <Field
+              label="iLoveIMG public key"
+              htmlFor="iLoveImgPublicKey"
+              hint="Create a free key at developer.ilovepdf.com and paste it here.">
+              <TextInput
+                id="iLoveImgPublicKey"
+                type="password"
+                value={settings.iLoveImgPublicKey}
+                placeholder="project_public_..."
+                onChange={(iLoveImgPublicKey) =>
+                  onChange({ iLoveImgPublicKey })
+                }
+              />
+            </Field>
+          </>
+        )}
       </Section>
 
       {/* ------------------------------------------------------------- reset */}
