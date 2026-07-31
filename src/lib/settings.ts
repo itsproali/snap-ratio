@@ -100,13 +100,6 @@ export interface Settings {
   showGrid: boolean
   /** Accent colour of the selection border/handles. */
   accentColor: string
-
-  /* ------------------------------------------------- optional compression */
-
-  /** Send the image to the iLoveIMG API for extra compression. Off by default. */
-  remoteCompression: boolean
-  /** User-supplied iLoveIMG public key. Required when `remoteCompression` is on. */
-  iLoveImgPublicKey: string
 }
 
 /** Tokens understood by `filenameTemplate`. */
@@ -149,10 +142,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showDimensions: true,
   showGrid: false,
   // The extension's own violet, so the overlay matches the popup.
-  accentColor: "#6d28d9",
-
-  remoteCompression: false,
-  iLoveImgPublicKey: ""
+  accentColor: "#6d28d9"
 }
 
 /** Selectable aspect ratios, in the order shown in the popup. */
