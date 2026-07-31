@@ -16,14 +16,14 @@ import type {
   CaptureMessage,
   CaptureResponse,
   CaptureResult
-} from "~lib/messages"
+} from "@/lib/messages"
 import {
   buildFilename,
   extensionFor,
   getSettings,
   type SelectionBounds,
   type Settings
-} from "~lib/settings"
+} from "@/lib/settings"
 
 const isDev = process.env.NODE_ENV !== "production"
 

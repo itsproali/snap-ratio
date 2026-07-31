@@ -16,7 +16,7 @@ import {
   type AspectRatioId,
   type OutputFormat,
   type Settings
-} from "~lib/settings"
+} from "@/lib/settings"
 
 import {
   Field,

@@ -3,7 +3,7 @@
  * service worker.
  */
 
-import type { AfterCaptureAction, SelectionBounds } from "~lib/settings"
+import type { AfterCaptureAction, SelectionBounds } from "@/lib/settings"
 
 /** Popup -> content script: show the selection overlay. */
 export interface ShowOverlayMessage {

@@ -1,4 +1,4 @@
-import cssText from "data-text:~style.css"
+import cssText from "data-text:@/style.css"
 import type { PlasmoCSConfig } from "plasmo"
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Rnd } from "react-rnd"
@@ -9,7 +9,7 @@ import {
   type CaptureMessage,
   type CaptureResponse,
   type CaptureResult
-} from "~lib/messages"
+} from "@/lib/messages"
 import {
   DEFAULT_SETTINGS,
   getLastBounds,
@@ -18,7 +18,7 @@ import {
   setLastBounds,
   type SelectionBounds,
   type Settings
-} from "~lib/settings"
+} from "@/lib/settings"
 
 export const config: PlasmoCSConfig = {
   matches: ["http://*/*", "https://*/*"],

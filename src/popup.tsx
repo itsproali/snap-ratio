@@ -7,7 +7,7 @@ import {
   type ReactNode
 } from "react"
 
-import { Card } from "~components/controls"
+import { Card } from "@/components/controls"
 import {
   IconAlert,
   IconCrop,
@@ -15,9 +15,9 @@ import {
   IconSliders,
   IconType,
   IconZap
-} from "~components/icons"
-import { SettingsPanel } from "~components/SettingsPanel"
-import type { ShowOverlayMessage } from "~lib/messages"
+} from "@/components/icons"
+import { SettingsPanel } from "@/components/SettingsPanel"
+import type { ShowOverlayMessage } from "@/lib/messages"
 import {
   ASPECT_RATIO_PRESETS,
   buildFilename,
@@ -29,9 +29,9 @@ import {
   updateSettings,
   type AspectRatioId,
   type Settings
-} from "~lib/settings"
+} from "@/lib/settings"
 
-import "~style.css"
+import "@/style.css"
 
 type Tab = "capture" | "settings"
 

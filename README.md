@@ -68,7 +68,7 @@ grep -rl "Minified React error" build/chrome-mv3-prod/
 ```
 
 `web_accessible_resources` lists a `content.*.css` file that is never emitted —
-the content script's styles are inlined as a string via `data-text:~style.css`.
+the content script's styles are inlined as a string via `data-text:@/style.css`.
 That is long-standing Plasmo behaviour, Chrome tolerates it, and nothing
 requests the file.
 
