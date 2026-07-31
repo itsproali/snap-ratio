@@ -42,7 +42,27 @@ Fixed-ratio screenshot tool for thumbnails and mockups. Pick a ratio, drag, capt
 
 ## Category
 
-Productivity → Workflow & Planning
+```
+Art & Design
+```
+
+Chrome's own description for it names this use case directly:
+
+> These extensions provide tools for viewing, editing, organizing, and sharing
+> images and photos. They may also offer features for **capturing screenshots**,
+> image searching, and integrating with popular image hosting or editing
+> services.
+
+The old **Photos** category was folded into Art & Design, and **Productivity**
+is deprecated entirely (it now maps across Education, Functionality & UI,
+Household, Privacy & Security, Tools and Workflow & Planning).
+
+Runner-up is **Workflow & Planning**, but its description is about time
+trackers, to-do lists, email organisers and calendars — a worse fit. **Tools**
+is explicitly the "doesn't fit anywhere else" bucket, which does not apply here.
+
+Only one category can be selected, and it can be changed later from the
+dashboard.
 
 ---
 
