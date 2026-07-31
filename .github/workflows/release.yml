@@ -36,6 +36,11 @@ jobs:
   release:
     name: Version, build & publish
     runs-on: ubuntu-latest
+    env:
+      # Secrets cannot be referenced from a step `if:` directly, so surface
+      # presence as a plain env var. Lets versioning/tagging work before the
+      # store item exists, instead of failing the build on a missing secret.
+      HAS_SUBMIT_KEYS: ${{ secrets.SUBMIT_KEYS != '' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -97,9 +102,24 @@ jobs:
           if-no-files-found: error
 
       - name: Publish to the Chrome Web Store
-        if: steps.release.outputs.released == 'true' && !inputs.dry_run
+        if: >-
+          steps.release.outputs.released == 'true' &&
+          !inputs.dry_run &&
+          env.HAS_SUBMIT_KEYS == 'true'
         uses: PlasmoHQ/bpp@v3
         with:
           keys: ${{ secrets.SUBMIT_KEYS }}
           artifact: build/chrome-mv3-prod.zip
           verbose: true
+
+      - name: Note the skipped store upload
+        if: >-
+          steps.release.outputs.released == 'true' &&
+          !inputs.dry_run &&
+          env.HAS_SUBMIT_KEYS != 'true'
+        run: |
+          echo "::warning::SUBMIT_KEYS is not set, so the store upload was skipped."
+          echo "The version was still bumped, tagged and released on GitHub, and the"
+          echo "zip is attached to this run as an artifact. Add the secret (see"
+          echo "PUBLISHING.md) once the item exists, and the next release uploads."
+
