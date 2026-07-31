@@ -495,8 +495,6 @@ const ResultDialog = ({
     }
   }
 
-  const remote = result.stats.remote
-
   return (
     <div className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
@@ -530,17 +528,6 @@ const ResultDialog = ({
               <span>Quality {Math.round(result.stats.quality * 100)}%</span>
             )}
           </div>
-
-          {remote && (
-            <p
-              className={`mt-2 text-[11px] ${
-                remote.compressed ? "text-green-600" : "text-amber-600"
-              }`}>
-              {remote.compressed
-                ? `Remote compression saved ${remote.reduction}.`
-                : `Remote compression skipped: ${remote.error}`}
-            </p>
-          )}
 
           {copyError && (
             <p className="mt-2 text-[11px] text-red-600">{copyError}</p>
