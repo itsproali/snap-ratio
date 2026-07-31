@@ -1,7 +1,7 @@
 {
   "name": "snap-ratio",
   "displayName": "Snap Ratio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Capture perfect fixed-ratio frames, auto-resize, compress, and download polished thumbnails in one click.",
   "author": "Mohammad Ali <itsproali@gmail.com>",
   "homepage": "https://github.com/itsproali/snap-ratio",
