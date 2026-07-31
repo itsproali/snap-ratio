@@ -161,12 +161,20 @@ Under **Store listing**:
 
 For the store icon, upload the pre-generated `store/icon-128.png`.
 
-Good screenshots to take (1280×800):
+Screenshots are already generated in [`store/screenshots/`](./store/screenshots),
+all exactly 1280×800. Upload them in this order:
 
-1. The popup's **Capture** tab over a real page.
-2. The selection overlay mid-drag, showing the ratio lock and dimensions.
-3. The popup's **Settings** tab.
-4. The result dialog with a captured thumbnail.
+| File | Shows |
+| --- | --- |
+| `01-overlay.png` | the selection frame locked to 16:9 on a live page |
+| `02-popup.png` | the Capture tab, quick ratio switching, filename preview |
+| `03-settings.png` | capture-area defaults: ratio, size, start position |
+| `04-quality.png` | output width, format, quality, max file size |
+| `05-result.png` | the result dialog, plus the privacy message |
+
+They are composed from the real built bundles rather than mockups, so they
+cannot drift from what ships. See [`store/README.md`](./store/README.md) for how
+to regenerate them after a UI change.
 
 ### 4. Privacy and permission disclosures
 

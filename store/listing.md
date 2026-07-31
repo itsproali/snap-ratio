@@ -66,6 +66,22 @@ dashboard.
 
 ---
 
+## Screenshots
+
+Five 1280×800 frames in [`screenshots/`](./screenshots), upload in order:
+
+| File | Shows |
+| --- | --- |
+| `01-overlay.png` | the selection frame locked to 16:9 on a live page |
+| `02-popup.png` | the Capture tab, quick ratio switching, filename preview |
+| `03-settings.png` | capture-area defaults: ratio, size, start position |
+| `04-quality.png` | output width, format, quality, max file size |
+| `05-result.png` | the result dialog, plus the privacy message |
+
+Composed from the real built bundles — see [`README.md`](./README.md).
+
+---
+
 ## Detailed description
 
 ```
