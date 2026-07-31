@@ -184,10 +184,53 @@ Capture a fixed-aspect-ratio region of the current page and save it as an image 
 network requests, so every category is a genuine "no". Confirm all three
 certifications.
 
-**Remote code** — No. Everything is bundled; there is no `eval`, no remote
-script, and no remote font.
+**Remote code** — select **"No, I am not using remote code."**
 
-Permission justifications are in [`PUBLISHING.md`](../PUBLISHING.md#4-privacy-and-permission-disclosures).
+Everything is bundled into the package by Plasmo. There is no `eval`, no
+`<script>` pointing at an external file, no remotely loaded module, and no
+remote web font (the Google Fonts import was removed precisely so this answer
+stays a clean "no"). Selecting "Yes" here invites an in-depth review you do not
+need.
+
+---
+
+## Permission justifications (1,000 char limit each)
+
+### storage justification
+
+```
+Snap Ratio stores only the user's own capture preferences: aspect ratio, default frame size and position, output width, image format, quality, maximum file size, filename template, and overlay appearance. Persisting these is the core value of the extension, since the user configures a preset once instead of re-entering it on every capture. chrome.storage.sync is used so the preferences follow the user's own signed-in Chrome profile across their computers. No captured image, page content, browsing history, analytics or personal data is ever written to storage.
+```
+
+### activeTab justification
+
+```
+activeTab is required to call chrome.tabs.captureVisibleTab on the tab the user explicitly invoked the extension on. That call is the only way to produce the screenshot the user asked for, which is the extension's single purpose. Access is granted by the user's own gesture, either clicking the toolbar icon or pressing the keyboard shortcut, and is used solely to capture the visible area of that one tab at that moment. The extension does not enumerate the user's other tabs, read tab history, or touch any tab the user has not acted on.
+```
+
+### downloads justification
+
+```
+downloads is used to save the finished image to the user's Downloads folder when they have chosen "Download" as their post-capture action in settings. It is called only in direct response to a capture the user initiated, and the filename comes from the user's own template. The extension never initiates a download the user did not ask for, never downloads from a remote URL (the image is generated locally and passed as a data URL), and never reads, searches or modifies the user's existing download history.
+```
+
+### Host permission justification
+
+```
+The selection frame users drag to choose their capture region is drawn by a content script, so it must be able to run on whichever page the user wants to capture. Since that can be any website, the match pattern must be http://*/* and https://*/*; there is no fixed set of hosts to narrow it to. The host permission is also required for chrome.tabs.captureVisibleTab to capture the tab.
+
+On the page, the content script only renders the extension's own overlay inside a Shadow DOM and reads the window dimensions and device pixel ratio, which are needed to map the selected region onto the captured image. The single piece of page data it reads is the page title, and only to fill the optional {title} filename token; the page's hostname is likewise used only for the optional {domain} token. It does not read or transmit page text, form data, cookies or credentials, and it makes no network requests of any kind, so nothing from any site leaves the user's device.
+```
+
+The dashboard warns that a host permission may trigger an in-depth review. That
+is expected for any screenshot extension and is not a rejection — the
+justification above states plainly why the pattern cannot be narrowed, and what
+the content script does and does not touch.
+
+Note the deliberate honesty about the page title and hostname: they *are* read,
+purely to fill the optional `{title}` and `{domain}` filename tokens. A
+reviewer will see `document.title` and `tab.url` in the source, so claiming the
+extension reads nothing from the page would be a mismatch worth avoiding.
 
 > If [PR #3](https://github.com/itsproali/snap-ratio/pull/3) (optional iLoveIMG
 > compression) is ever merged, the Data usage answers change — you must then
