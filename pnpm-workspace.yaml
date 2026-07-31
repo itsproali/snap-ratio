@@ -1,0 +1,12 @@
+# Native / postinstall build scripts required by Plasmo's Parcel toolchain.
+# Without these approved, `plasmo build` cannot resolve its native bindings.
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  sharp: true
+minimumReleaseAgeExclude:
+  - '@types/react-dom@19.2.4'
+  - '@types/react@19.2.18'

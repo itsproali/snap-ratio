@@ -1,141 +1,223 @@
-# Snap Ratio - Thumbnail Capture Extension
+# Snap Ratio
 
-A Chrome extension built with Plasmo, React, TypeScript, and TailwindCSS that captures screenshots of a user-selected 16:9 fixed-ratio area, resizes them to 768×432, compresses using the iLoveIMG API, and downloads the processed thumbnail.
+A Chrome (MV3) extension that captures a fixed-ratio region of any page, scales
+and encodes it locally, and hands you the result as a download, a clipboard
+image, or a preview.
+
+Built with [Plasmo](https://www.plasmo.com/), React 19, TypeScript and
+TailwindCSS.
 
 ## Features
 
-- **Fixed 16:9 Ratio Selection**: Drag and resize a selection box that maintains a 16:9 aspect ratio
-- **Screenshot Capture**: Capture only the selected area from the current tab
-- **Automatic Resizing**: Automatically resizes captured images to 768×432 pixels
-- **Image Compression**: Compresses images using the iLoveIMG API
-- **Automatic Download**: Downloads processed thumbnails with custom filenames
+- **Configurable aspect ratio** — 16:9, 4:3, 3:2, 1:1, 9:16, 21:9, a custom
+  ratio of your own, or free-form with no lock.
+- **Remembered defaults** — every option below lives in the popup and persists
+  via `chrome.storage.sync`, so you set it once instead of on every capture.
+  - starting size (% of viewport, with a max width cap)
+  - starting position (nine-point anchor grid, exact X/Y, or "remember last")
+  - output width, format (JPEG / WebP / PNG) and quality
+  - an optional maximum file size, which steps quality down until it fits
+  - what happens after a capture: preview, download, or copy to clipboard
+  - filename template with `{name}`, `{domain}`, `{title}`, `{date}`, `{time}`,
+    `{timestamp}`, `{width}`, `{height}` tokens
+  - overlay accent colour, backdrop dim, live dimensions, rule-of-thirds grid
+- **Keyboard driven** — <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> starts a
+  capture, <kbd>Enter</kbd> confirms, <kbd>Esc</kbd> cancels, arrow keys nudge
+  (hold <kbd>Shift</kbd> for 10px steps).
+- **Local by default** — cropping, resizing and encoding all happen on-device
+  with `OffscreenCanvas`. No network requests unless you explicitly opt in to
+  iLoveIMG compression with your own API key.
 
-## Tech Stack
+## Tech stack
 
-- **Plasmo** - Browser extension framework
-- **React** - UI library
-- **TypeScript** - Type safety
-- **TailwindCSS** - Styling
-- **Chrome APIs** - Screenshot capture and downloads
-- **iLoveIMG API** - Image compression
+| Piece         | Version           |
+| ------------- | ----------------- |
+| Plasmo        | 0.90.5            |
+| React         | 19.2              |
+| TypeScript    | 5.9               |
+| TailwindCSS   | 3.4               |
+| `@plasmohq/storage` | 1.15        |
 
-## Project Structure
+### Build gotchas
 
-```
-src/
-├── popup.tsx              # Popup UI with Template ID input
-├── content.tsx            # Content script with selection overlay
-├── background/
-│   ├── index.ts          # Background service worker entry
-│   └── messages/
-│       └── captureScreenshot.ts  # Screenshot processing handler
-├── features/              # Feature components
-└── style.css             # Global styles with Tailwind
-```
+Plasmo 0.90 runs on Parcel 2.9, which is sensitive to a few things in
+`package.json`. All three of these produce builds that *look* successful:
 
-## Getting Started
+1. **Never add an `engines` field.** Parcel infers a Node/library target from
+   it and marks every dependency as external. React then never lands in the
+   bundle (the content script drops from ~284KB to ~44KB and the module map
+   shows `"react": "react"`), and the popup entry fails to resolve. The
+   extension loads but crashes the moment any UI mounts.
+2. **Never override `manifest.action` wholesale.** Plasmo derives
+   `action.default_popup` from `src/popup.tsx`; supplying your own `action`
+   object replaces it, so `popup.html` is never generated and clicking the
+   toolbar icon does nothing. This is why there is no custom `default_title` —
+   Chrome falls back to the extension name, which is fine.
+3. **Stay on Tailwind 3.x.** Tailwind 4's PostCSS plugin pulls in
+   `@tailwindcss/node` → `jiti`, which imports `node:module`; Parcel tries to
+   resolve that for a browser target and the build fails outright. Revisit once
+   Plasmo ships a newer Parcel.
 
-### Installation
-
-1. Install dependencies:
-
-```bash
-pnpm install
-# or
-npm install
-```
-
-2. Run the development server:
-
-```bash
-pnpm dev
-# or
-npm run dev
-```
-
-3. Load the extension in Chrome:
-   - Open Chrome and navigate to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select the `build/chrome-mv3-dev` directory
-
-## Usage
-
-1. Click the extension icon to open the popup
-2. Enter a Template ID (this will be used as the filename)
-3. Click "Capture Thumbnail"
-4. A fullscreen overlay will appear with a 16:9 selection box
-5. Drag to move or use corner handles to resize (ratio is locked to 16:9)
-6. Click "Capture Frame" to process and download the thumbnail
-7. The image will be automatically:
-   - Cropped to the selected area
-   - Resized to configured dimensions (default: 640×360 pixels)
-   - Compressed using iLoveIMG API
-   - Downloaded as `<TEMPLATE_ID>.jpg`
-
-## Image Configuration
-
-You can easily adjust image quality, dimensions, and format by editing `src/config/image.ts`:
-
-```typescript
-export const imageConfig = {
-  width: 640,        // Output width (16:9 ratio)
-  height: 360,       // Output height (16:9 ratio)
-  quality: 0.85,     // JPEG quality (0.0-1.0, lower = smaller file)
-  format: "image/jpeg" // Output format: "image/jpeg" or "image/png"
-}
-```
-
-**Tips for achieving ~10KB file size:**
-- Reduce dimensions: Try 600×338 or 560×315
-- Lower quality: Try 0.80-0.82 (still looks good)
-- Combine both for maximum compression
-
-## API Configuration
-
-The extension uses the iLoveIMG API for image compression. To use compression, you need to:
-
-1. **Register at iLovePDF Developers**: Go to https://developer.ilovepdf.com/ and create an account
-2. **Get your API keys**: 
-   - Navigate to the API Keys section in your developer console
-   - Copy your Public Key and Secret Key
-3. **Set environment variables**:
-   - Copy `.env.example` to `.env` (or create a new `.env` file)
-   - Add your keys:
-     ```
-     PLASMO_PUBLIC_ILOVEIMG_PUBLIC_KEY=your_public_key_here
-     PLASMO_PUBLIC_ILOVEIMG_SECRET_KEY=your_secret_key_here
-     ```
-4. **Restart the development server** after adding the keys
-
-**Note**: The extension will fall back to uncompressed images if the API keys are not configured or if compression fails.
-
-## Building for Production
+After any dependency or config change, sanity-check the output:
 
 ```bash
 pnpm build
-# or
-npm run build
+# popup.html must exist, and React must be inlined in both bundles:
+ls build/chrome-mv3-prod/popup.html
+grep -rl "Minified React error" build/chrome-mv3-prod/
 ```
 
-This creates a production bundle in the `build/` directory, ready to be packaged and published.
+`web_accessible_resources` lists a `content.*.css` file that is never emitted —
+the content script's styles are inlined as a string via `data-text:~style.css`.
+That is long-standing Plasmo behaviour, Chrome tolerates it, and nothing
+requests the file.
+
+## Project structure
+
+```bash
+src/
+├── popup.tsx                  # Popup shell: Capture and Settings tabs
+├── content.tsx                # Selection overlay, result dialog, toasts
+├── background/
+│   └── index.ts               # Crop/resize/encode, downloads, shortcut relay
+├── components/
+│   ├── SettingsPanel.tsx      # Every user-facing setting
+│   └── controls.tsx           # Toggle, slider, segmented control, inputs
+├── lib/
+│   ├── settings.ts            # Schema, defaults, storage helpers
+│   └── messages.ts            # Typed message contract + type guards
+└── style.css                  # Tailwind entry + Shadow DOM reset
+```
+
+## Getting started
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Then load the unpacked extension:
+
+1. Open `chrome://extensions/`
+2. Enable **Developer mode**
+3. **Load unpacked** → select `build/chrome-mv3-dev`
+
+### Useful scripts
+
+| Script                  | What it does                                  |
+| ----------------------- | --------------------------------------------- |
+| `pnpm dev`              | Dev build with hot reload                     |
+| `pnpm build`            | Production build → `build/chrome-mv3-prod`    |
+| `pnpm package`          | Zip the production build for the store        |
+| `pnpm build:firefox`    | Firefox MV3 build                             |
+| `pnpm typecheck`        | `tsc --noEmit`                                |
+| `pnpm format`           | Prettier write over `src/`                    |
+
+## Usage
+
+1. Click the toolbar icon (or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>).
+2. Optionally type a name — it feeds the `{name}` filename token, and can be
+   prefilled from the page URL.
+3. Hit **Select area to capture**. Drag and resize the frame; the ratio stays
+   locked to whatever you configured.
+4. Press <kbd>Enter</kbd> or click **Capture**.
+
+Everything else follows your saved settings. Open the **Settings** tab in the
+popup to change them; changes apply to the next capture with no reload.
+
+## Optional: iLoveIMG compression
+
+Off by default, and the extension is fully functional without it. To enable:
+
+1. Create a free account at <https://developer.ilovepdf.com/> and copy your
+   **public key**.
+2. Popup → **Settings** → **Extra compression** → toggle on and paste the key.
+
+The key is stored in `chrome.storage.sync` alongside your other settings.
+
+> With this enabled, each capture is uploaded to `api.iloveimg.com` for
+> compression. Leave it off to keep every capture on your device. If the remote
+> call fails or returns a larger file, the local version is used instead — a
+> capture is never lost to a third-party outage.
+
+Earlier versions read these keys from a `.env` file and baked them into the
+published bundle. That approach shipped a shared secret to every user, so it
+has been replaced by the per-user setting above. `src/config/` and
+`.env.example` were removed accordingly.
 
 ## Permissions
 
-The extension requires the following permissions:
+| Permission                    | Why                                                                 |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `activeTab`                   | Read the current tab in order to screenshot it                       |
+| `storage`                     | Persist your settings                                                |
+| `downloads`                   | Save the image when "Download" is the post-capture action            |
+| `http://*/*`, `https://*/*`   | Draw the selection overlay on the page you want to capture           |
 
-- `tabs` - To access tab information
-- `activeTab` - To capture screenshots of the current tab
-- `downloads` - To save processed images
-- `scripting` - To inject scripts for viewport detection
-- `host_permissions` - To access iLoveIMG API
+`tabs` and `scripting` were dropped in 1.1.0 — the content script now reports
+its own viewport instead of the service worker injecting a script to measure it.
 
-## Development Notes
+## Publishing to the Chrome Web Store
 
-- The selection overlay uses viewport coordinates which are scaled to match screenshot dimensions
-- Device pixel ratio is automatically detected and accounted for
-- Image processing uses OffscreenCanvas for efficient processing in the service worker
-- Error handling includes fallbacks for compression failures
+### One-time setup
+
+1. Register as a Chrome Web Store developer and create the item (a first manual
+   upload of `build/chrome-mv3-prod.zip` is the easiest way to get an item ID).
+2. Follow [Plasmo's submit guide](https://docs.plasmo.com/framework/workflows/submit)
+   to mint a Google API `clientId`, `clientSecret` and `refreshToken`.
+3. Add a repository secret named `SUBMIT_KEYS`:
+
+   ```json
+   {
+     "$schema": "https://raw.githubusercontent.com/PlasmoHQ/bpp/v3/keys.schema.json",
+     "chrome": {
+       "clientId": "...",
+       "clientSecret": "...",
+       "refreshToken": "...",
+       "extId": "your-extension-id"
+     }
+   }
+   ```
+
+### Releasing
+
+- **Tag a release** — bump `version` in `package.json`, then push a matching
+  tag. `.github/workflows/submit.yml` verifies the tag matches the manifest
+  version, builds, packages and publishes.
+
+  ```bash
+  git tag v1.1.0 && git push origin v1.1.0
+  ```
+
+- **Dry run** — trigger *Submit to Web Store* manually from the Actions tab with
+  the **publish** box unticked. It builds and uploads the zip as a workflow
+  artifact without touching the store.
+
+`.github/workflows/ci.yml` runs typecheck, a Prettier check and a build on every
+push and PR.
+
+### Listing checklist
+
+- [ ] Privacy policy URL — point it at [`PRIVACY.md`](./PRIVACY.md) (published,
+      e.g. via GitHub Pages or the raw file link)
+- [ ] Justify `activeTab`, `storage`, `downloads` and the host permission in the
+      dashboard's permission-justification fields
+- [ ] Complete the **Data usage** disclosures: Snap Ratio collects nothing by
+      default; disclose the optional iLoveIMG upload path
+- [ ] Screenshots at 1280×800 or 640×400
+- [ ] A 128×128 store icon (generated automatically from `assets/icon.png`)
+
+## Notes
+
+- Selection bounds are in CSS pixels and are scaled into screenshot pixel space
+  using the ratio between the captured image and the viewport the content
+  script measured, so high-DPI displays and browser zoom are handled.
+- The crop and the resize are a single `drawImage` call, so the image is
+  resampled once rather than twice.
+- The content script bundle (~284KB) loads on every `http(s)` page because the
+  overlay is registered declaratively. If page-load cost matters more than the
+  reduced permission surface, switch to `chrome.scripting.executeScript` on
+  demand and re-add the `scripting` permission.
 
 ## License
 

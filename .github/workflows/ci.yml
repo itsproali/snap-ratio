@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Typecheck & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # pnpm version comes from the "packageManager" field in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Check formatting
+        run: pnpm prettier --check "src/**/*.{ts,tsx,css}"
+
+      - name: Build (Chrome MV3)
+        run: pnpm build
+
+      - name: Package (Chrome MV3)
+        run: pnpm package
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: chrome-mv3-prod
+          path: build/chrome-mv3-prod.zip
+          if-no-files-found: error
+          retention-days: 14
