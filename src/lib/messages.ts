@@ -45,14 +45,6 @@ export interface CaptureResult {
     /** Quality actually used, after any max-file-size retries. */
     quality: number
     format: string
-    /** Present only when remote compression ran. */
-    remote?: {
-      compressed: boolean
-      error?: string
-      originalBytes?: number
-      compressedBytes?: number
-      reduction?: string
-    }
   }
 }
 
