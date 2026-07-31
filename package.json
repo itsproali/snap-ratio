@@ -1,7 +1,7 @@
 {
   "name": "snap-ratio",
   "displayName": "Snap Ratio",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "Capture perfect fixed-ratio frames, auto-resize, compress, and download polished thumbnails in one click.",
   "author": "Mohammad Ali <itsproali@gmail.com>",
   "homepage": "https://github.com/itsproali/snap-ratio",
@@ -14,7 +14,8 @@
     "package": "plasmo package",
     "package:firefox": "plasmo package --target=firefox-mv3",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "cws:token": "node scripts/cws-token.mjs"
   },
   "dependencies": {
     "@plasmohq/storage": "1.15.0",
@@ -25,13 +26,18 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "4.7.1",
+    "@semantic-release/changelog": "7.0.0",
+    "@semantic-release/exec": "7.1.0",
+    "@semantic-release/git": "11.0.1",
     "@types/chrome": "0.2.2",
     "@types/node": "24.13.3",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "autoprefixer": "10.4.24",
+    "conventional-changelog-conventionalcommits": "10.2.1",
     "postcss": "8.5.25",
     "prettier": "3.9.6",
+    "semantic-release": "25.0.8",
     "tailwindcss": "3.4.19",
     "typescript": "5.9.3"
   },

@@ -1,0 +1,105 @@
+name: Release
+
+# Merging to main is the release trigger.
+#
+# semantic-release reads the conventional-commit messages since the last tag,
+# works out the next version, writes it to package.json (which is where Plasmo
+# reads the manifest version from), updates CHANGELOG.md, commits, tags, and
+# creates the GitHub release. Only then do we build and ship to the store.
+#
+# Versioning and publishing deliberately live in ONE job: tags pushed with the
+# built-in GITHUB_TOKEN do not trigger other workflows, so a separate
+# tag-triggered publish job would never fire.
+#
+# Required repository secret: SUBMIT_KEYS  (see PUBLISHING.md)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: work out the next version and build, but do not tag, commit or publish"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # commit the version bump, push the tag, create the release
+  issues: write # semantic-release release comments
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Version, build & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # semantic-release needs the full history and all tags to work out
+          # what changed since the last release.
+          fetch-depth: 0
+          persist-credentials: true
+
+      # pnpm version comes from the "packageManager" field in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Check formatting
+        run: pnpm prettier --check "src/**/*.{ts,tsx,css}"
+
+      - name: Semantic release
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # `released`/`version` are written straight to $GITHUB_OUTPUT by the
+        # @semantic-release/exec publishCmd in .releaserc.json. Comparing
+        # package.json before/after would not work: the computed version can
+        # legitimately equal the version already in the file.
+        run: pnpm exec semantic-release ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Report outcome
+        run: |
+          if [ "${{ steps.release.outputs.released }}" = "true" ]; then
+            echo "::notice::Released v${{ steps.release.outputs.version }}"
+          else
+            echo "::notice::No releasable commits since the last tag - nothing to publish."
+          fi
+
+      # Built after the bump so the manifest carries the new version.
+      - name: Build
+        if: steps.release.outputs.released == 'true' || inputs.dry_run
+        run: pnpm build
+
+      - name: Package
+        if: steps.release.outputs.released == 'true' || inputs.dry_run
+        run: pnpm package
+
+      - name: Upload zip artifact
+        if: steps.release.outputs.released == 'true' || inputs.dry_run
+        uses: actions/upload-artifact@v7
+        with:
+          name: chrome-mv3-prod
+          path: build/chrome-mv3-prod.zip
+          if-no-files-found: error
+
+      - name: Publish to the Chrome Web Store
+        if: steps.release.outputs.released == 'true' && !inputs.dry_run
+        uses: PlasmoHQ/bpp@v3
+        with:
+          keys: ${{ secrets.SUBMIT_KEYS }}
+          artifact: build/chrome-mv3-prod.zip
+          verbose: true

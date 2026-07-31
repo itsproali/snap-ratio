@@ -2,9 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # main is covered by release.yml, which runs the same gates before
+    # releasing; running both here would duplicate every release build.
+    branches: [dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:

@@ -24,9 +24,8 @@ TailwindCSS.
 - **Keyboard driven** — <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> starts a
   capture, <kbd>Enter</kbd> confirms, <kbd>Esc</kbd> cancels, arrow keys nudge
   (hold <kbd>Shift</kbd> for 10px steps).
-- **Local by default** — cropping, resizing and encoding all happen on-device
-  with `OffscreenCanvas`. No network requests unless you explicitly opt in to
-  iLoveIMG compression with your own API key.
+- **Fully local** — cropping, resizing and encoding all happen on-device with
+  `OffscreenCanvas`. The extension makes no network requests at all.
 
 ## Tech stack
 
@@ -125,26 +124,6 @@ Then load the unpacked extension:
 Everything else follows your saved settings. Open the **Settings** tab in the
 popup to change them; changes apply to the next capture with no reload.
 
-## Optional: iLoveIMG compression
-
-Off by default, and the extension is fully functional without it. To enable:
-
-1. Create a free account at <https://developer.ilovepdf.com/> and copy your
-   **public key**.
-2. Popup → **Settings** → **Extra compression** → toggle on and paste the key.
-
-The key is stored in `chrome.storage.sync` alongside your other settings.
-
-> With this enabled, each capture is uploaded to `api.iloveimg.com` for
-> compression. Leave it off to keep every capture on your device. If the remote
-> call fails or returns a larger file, the local version is used instead — a
-> capture is never lost to a third-party outage.
-
-Earlier versions read these keys from a `.env` file and baked them into the
-published bundle. That approach shipped a shared secret to every user, so it
-has been replaced by the per-user setting above. `src/config/` and
-`.env.example` were removed accordingly.
-
 ## Permissions
 
 | Permission                    | Why                                                                 |
@@ -154,58 +133,42 @@ has been replaced by the per-user setting above. `src/config/` and
 | `downloads`                   | Save the image when "Download" is the post-capture action            |
 | `http://*/*`, `https://*/*`   | Draw the selection overlay on the page you want to capture           |
 
-`tabs` and `scripting` were dropped in 1.1.0 — the content script now reports
+`tabs` and `scripting` are deliberately not requested — the content script reports
 its own viewport instead of the service worker injecting a script to measure it.
 
 ## Publishing to the Chrome Web Store
 
-### One-time setup
+See **[PUBLISHING.md](./PUBLISHING.md)** for the full walkthrough: developer
+account, first manual upload, store listing assets, privacy and permission
+disclosures, OAuth credentials, and the release flow.
 
-1. Register as a Chrome Web Store developer and create the item (a first manual
-   upload of `build/chrome-mv3-prod.zip` is the easiest way to get an item ID).
-2. Follow [Plasmo's submit guide](https://docs.plasmo.com/framework/workflows/submit)
-   to mint a Google API `clientId`, `clientSecret` and `refreshToken`.
-3. Add a repository secret named `SUBMIT_KEYS`:
+### Branching model
 
-   ```json
-   {
-     "$schema": "https://raw.githubusercontent.com/PlasmoHQ/bpp/v3/keys.schema.json",
-     "chrome": {
-       "clientId": "...",
-       "clientSecret": "...",
-       "refreshToken": "...",
-       "extId": "your-extension-id"
-     }
-   }
-   ```
+- **`dev`** — day-to-day work. `ci.yml` runs typecheck, a Prettier check and a
+  build on every push and PR.
+- **`main`** — merging here releases.
 
-### Releasing
+Versions are never edited by hand. On every push to `main`, `release.yml` runs
+semantic-release: it reads the conventional-commit messages since the last tag,
+writes the next version to `package.json` (where Plasmo reads the manifest
+version from), updates `CHANGELOG.md`, tags, creates the GitHub release, then
+builds and uploads to the Chrome Web Store.
 
-- **Tag a release** — bump `version` in `package.json`, then push a matching
-  tag. `.github/workflows/submit.yml` verifies the tag matches the manifest
-  version, builds, packages and publishes.
+| Prefix | Bump |
+| --- | --- |
+| `feat:` | minor |
+| `fix:` `perf:` `refactor:` `style:` `build:` | patch |
+| `feat!:` / `BREAKING CHANGE:` | major |
+| `docs:` `test:` `ci:` `chore:` | no release |
 
-  ```bash
-  git tag v1.1.0 && git push origin v1.1.0
-  ```
+```bash
+git commit -m "feat: add a rounded-corner option"
+git push origin dev
+gh pr create --base main --head dev --fill && gh pr merge --merge
+```
 
-- **Dry run** — trigger *Submit to Web Store* manually from the Actions tab with
-  the **publish** box unticked. It builds and uploads the zip as a workflow
-  artifact without touching the store.
-
-`.github/workflows/ci.yml` runs typecheck, a Prettier check and a build on every
-push and PR.
-
-### Listing checklist
-
-- [ ] Privacy policy URL — point it at [`PRIVACY.md`](./PRIVACY.md) (published,
-      e.g. via GitHub Pages or the raw file link)
-- [ ] Justify `activeTab`, `storage`, `downloads` and the host permission in the
-      dashboard's permission-justification fields
-- [ ] Complete the **Data usage** disclosures: Snap Ratio collects nothing by
-      default; disclose the optional iLoveIMG upload path
-- [ ] Screenshots at 1280×800 or 640×400
-- [ ] A 128×128 store icon (generated automatically from `assets/icon.png`)
+For a dry run, use **Actions → Release → Run workflow** with **dry run** ticked:
+it computes the next version and builds, without tagging or publishing.
 
 ## Notes
 
