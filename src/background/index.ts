@@ -3,11 +3,13 @@
  *
  * Responsibilities:
  * - crop / resize / encode the visible tab into the user's configured output
+ * - optionally hand the result to iLoveIMG for extra compression
  * - save the file when the user chose "download" as the post-capture action
  * - relay the keyboard command to the content script
  *
- * All image work happens on-device via OffscreenCanvas. The extension makes no
- * network requests at all.
+ * All image work happens on-device via OffscreenCanvas. Nothing leaves the
+ * browser unless the user explicitly enables remote compression and supplies
+ * their own API key.
  */
 
 import type {
@@ -171,6 +173,173 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /* -------------------------------------------------------------------------- */
+/*                          optional remote compression                       */
+/* -------------------------------------------------------------------------- */
+
+const ILOVEIMG_BASE_URL = "https://api.iloveimg.com"
+const ILOVEIMG_TOOL = "compressimage"
+const TOKEN_VALIDITY_MS = 2 * 60 * 60 * 1000
+
+let cachedToken: { token: string; key: string; expiresAt: number } | null = null
+
+async function getAuthToken(publicKey: string): Promise<string> {
+  const now = Date.now()
+
+  // Re-authenticate if the key changed, not just when the token expired.
+  if (
+    cachedToken &&
+    cachedToken.key === publicKey &&
+    cachedToken.expiresAt > now
+  ) {
+    return cachedToken.token
+  }
+
+  const response = await fetch(`${ILOVEIMG_BASE_URL}/v1/auth`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ public_key: publicKey })
+  })
+
+  if (!response.ok) {
+    throw new Error(
+      `Authentication failed (${response.status}). Check your iLoveIMG public key.`
+    )
+  }
+
+  const data = await response.json()
+
+  if (!data?.token) {
+    throw new Error("iLoveIMG did not return a token.")
+  }
+
+  cachedToken = {
+    token: data.token,
+    key: publicKey,
+    expiresAt: now + TOKEN_VALIDITY_MS
+  }
+
+  return data.token
+}
+
+/**
+ * Runs the iLoveIMG compress workflow (auth -> start -> upload -> process ->
+ * download). Never throws: on failure it returns the original blob so a
+ * capture is never lost to a third-party outage.
+ */
+async function compressRemotely(
+  imageBlob: Blob,
+  publicKey: string,
+  extension: string
+): Promise<NonNullable<CaptureResult["stats"]["remote"]> & { blob: Blob }> {
+  try {
+    if (!publicKey.trim()) {
+      throw new Error("No API key configured")
+    }
+
+    const token = await getAuthToken(publicKey.trim())
+    const authHeader = { Authorization: `Bearer ${token}` }
+
+    const startResponse = await fetch(
+      `${ILOVEIMG_BASE_URL}/v1/start/${ILOVEIMG_TOOL}`,
+      { headers: authHeader }
+    )
+
+    if (!startResponse.ok) {
+      throw new Error(`Could not start task (${startResponse.status})`)
+    }
+
+    const { server, task } = await startResponse.json()
+
+    if (!server || !task) {
+      throw new Error("Malformed response from iLoveIMG")
+    }
+
+    const uploadForm = new FormData()
+
+    uploadForm.append("task", task)
+    uploadForm.append("file", imageBlob, `image.${extension}`)
+
+    const uploadResponse = await fetch(`https://${server}/v1/upload`, {
+      method: "POST",
+      headers: authHeader,
+      body: uploadForm
+    })
+
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed (${uploadResponse.status})`)
+    }
+
+    const { server_filename: serverFilename } = await uploadResponse.json()
+
+    if (!serverFilename) {
+      throw new Error("Upload did not return a filename")
+    }
+
+    const processResponse = await fetch(`https://${server}/v1/process`, {
+      method: "POST",
+      headers: { ...authHeader, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task,
+        tool: ILOVEIMG_TOOL,
+        files: [{ server_filename: serverFilename, filename: serverFilename }]
+      })
+    })
+
+    if (!processResponse.ok) {
+      throw new Error(`Processing failed (${processResponse.status})`)
+    }
+
+    const processData = await processResponse.json()
+
+    if (processData.status !== "TaskSuccess") {
+      throw new Error(processData.status_message || "Processing failed")
+    }
+
+    const downloadResponse = await fetch(
+      `https://${server}/v1/download/${task}`,
+      {
+        headers: authHeader
+      }
+    )
+
+    if (!downloadResponse.ok) {
+      throw new Error(`Download failed (${downloadResponse.status})`)
+    }
+
+    const compressedBlob = await downloadResponse.blob()
+
+    // A "compressed" file that grew is not worth keeping.
+    if (compressedBlob.size >= imageBlob.size) {
+      return {
+        blob: imageBlob,
+        compressed: false,
+        error: "Remote result was not smaller",
+        originalBytes: imageBlob.size
+      }
+    }
+
+    return {
+      blob: compressedBlob,
+      compressed: true,
+      originalBytes: imageBlob.size,
+      compressedBytes: compressedBlob.size,
+      reduction: `${((1 - compressedBlob.size / imageBlob.size) * 100).toFixed(1)}%`
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+
+    debug("Remote compression failed:", message)
+
+    return {
+      blob: imageBlob,
+      compressed: false,
+      error: message,
+      originalBytes: imageBlob.size
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                  capture                                   */
 /* -------------------------------------------------------------------------- */
 
@@ -208,9 +377,29 @@ async function handleCapture(
     settings
   )
 
-  const { blob: finalBlob, quality } = await encode(canvas, settings)
+  const { blob: encodedBlob, quality } = await encode(canvas, settings)
 
   const extension = extensionFor(settings.format)
+
+  let finalBlob = encodedBlob
+  let remote: CaptureResult["stats"]["remote"]
+
+  if (settings.remoteCompression) {
+    const outcome = await compressRemotely(
+      encodedBlob,
+      settings.iLoveImgPublicKey,
+      extension
+    )
+
+    finalBlob = outcome.blob
+    remote = {
+      compressed: outcome.compressed,
+      error: outcome.error,
+      originalBytes: outcome.originalBytes,
+      compressedBytes: outcome.compressedBytes,
+      reduction: outcome.reduction
+    }
+  }
 
   let domain = ""
 
@@ -253,7 +442,8 @@ async function handleCapture(
       height,
       bytes: finalBlob.size,
       quality,
-      format: settings.format
+      format: settings.format,
+      remote
     }
   }
 }

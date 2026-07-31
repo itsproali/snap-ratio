@@ -189,9 +189,14 @@ This is where most first submissions get rejected. Under **Privacy practices**:
 **Remote code** — answer **No**. Everything is bundled; there are no remote
 scripts, no `eval`, and the web font import was removed for exactly this reason.
 
-**Data usage** — tick nothing, and confirm all three certifications. Snap Ratio
-collects nothing and makes no network requests, so every category is a genuine
-"no". This is the single biggest reason the first review should go smoothly.
+**Data usage** — with the optional iLoveIMG compression shipped, the extension
+*can* transmit a screenshot to a third party, so you must tick **Website
+content** and explain that it is off by default, opt-in per user, and requires
+the user's own API key. Everything else stays unticked.
+
+> If a review is rejected over this, the fastest fix is to ship a build without
+> the integration: it is isolated to the settings entry, the background
+> workflow and the settings-panel card.
 
 **Privacy policy URL** — required. Publish [`PRIVACY.md`](./PRIVACY.md) at a
 stable public URL. Simplest option, no extra hosting:
