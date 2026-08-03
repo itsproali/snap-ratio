@@ -34,7 +34,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "autoprefixer": "10.4.24",
-    "conventional-changelog-conventionalcommits": "10.2.1",
+    "conventional-changelog-conventionalcommits": "9.3.1",
     "postcss": "8.5.25",
     "prettier": "3.9.6",
     "semantic-release": "25.0.8",
