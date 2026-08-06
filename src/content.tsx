@@ -434,6 +434,16 @@ const overlayState = {
   }
 }
 
+/**
+ * Set by the capture in flight, cleared as soon as it settles.
+ *
+ * The background worker pings us once `captureVisibleTab` has resolved; that
+ * ping is the only reliable signal that painting over the page is safe again.
+ * Scoping it to a single capture means a late or stray ping cannot strand a
+ * spinner on the page.
+ */
+let onScreenshotTaken: (() => void) | null = null
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.action === "showSelectionOverlay") {
     overlayState.open(message.name ?? "")
@@ -444,6 +454,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message?.action === "commandStartCapture") {
     overlayState.open("")
+    sendResponse({ success: true })
+
+    return false
+  }
+
+  if (message?.action === "screenshotTaken") {
+    onScreenshotTaken?.()
     sendResponse({ success: true })
 
     return false
@@ -705,7 +722,13 @@ const PlasmoOverlay = () => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve(null)))
       )
 
-      setIsProcessing(true)
+      // The progress overlay is deliberately NOT shown yet. The background
+      // worker has not called captureVisibleTab at this point, and anything
+      // painted before it does lands inside the screenshot - which is exactly
+      // how the "Processing" card used to end up in people's captures whenever
+      // the service worker was cold enough to lose the race. It pings us back
+      // the moment the pixels are grabbed.
+      onScreenshotTaken = () => setIsProcessing(true)
 
       try {
         const message: CaptureMessage = {
@@ -723,8 +746,6 @@ const PlasmoOverlay = () => {
         const response: CaptureResponse | undefined =
           await chrome.runtime.sendMessage(message)
 
-        setIsProcessing(false)
-
         if (!response) {
           throw new Error("No response from the extension background worker.")
         }
@@ -736,10 +757,12 @@ const PlasmoOverlay = () => {
         await handleSuccess(response)
       } catch (error) {
         console.error("[Snap Ratio] Capture failed", error)
-        setIsProcessing(false)
         setToast(
           error instanceof Error ? error.message : "Capture failed. Try again."
         )
+      } finally {
+        onScreenshotTaken = null
+        setIsProcessing(false)
       }
     },
     [settings.defaultAnchor]
@@ -777,6 +800,7 @@ const PlasmoOverlay = () => {
 
   const handleCancel = useCallback(() => {
     overlayState.close()
+    onScreenshotTaken = null
     setIsProcessing(false)
     setResult(null)
   }, [])

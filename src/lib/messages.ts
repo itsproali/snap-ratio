@@ -84,8 +84,22 @@ export interface CommandTriggerMessage {
   action: "commandStartCapture"
 }
 
+/**
+ * Background -> content script: the visible tab has been grabbed.
+ *
+ * Sent the instant `captureVisibleTab` resolves, before any cropping or
+ * encoding. It is the content script's cue that painting over the page is safe
+ * again - until it arrives, a progress overlay would land in the screenshot.
+ */
+export interface ScreenshotTakenMessage {
+  action: "screenshotTaken"
+}
+
 export type RuntimeMessage =
-  ShowOverlayMessage | CaptureMessage | CommandTriggerMessage
+  | ShowOverlayMessage
+  | CaptureMessage
+  | CommandTriggerMessage
+  | ScreenshotTakenMessage
 
 /** Formats a byte count for display, e.g. "412 KB". */
 export function formatBytes(bytes: number): string {

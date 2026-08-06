@@ -15,7 +15,8 @@
 import type {
   CaptureMessage,
   CaptureResponse,
-  CaptureResult
+  CaptureResult,
+  ScreenshotTakenMessage
 } from "@/lib/messages"
 import {
   buildFilename,
@@ -356,12 +357,31 @@ async function blobToDataUrl(blob: Blob, mimeType: string): Promise<string> {
   return `data:${mimeType};base64,${btoa(binary)}`
 }
 
+/**
+ * Tells the content script the pixels are safely grabbed, so it can paint its
+ * progress overlay without that overlay ending up inside the capture.
+ *
+ * Fire-and-forget: if nothing is listening the user simply gets no spinner,
+ * which must never take the capture itself down with it.
+ */
+function notifyScreenshotTaken(tabId: number | undefined): void {
+  if (typeof tabId !== "number") return
+
+  const ping: ScreenshotTakenMessage = { action: "screenshotTaken" }
+
+  void chrome.tabs.sendMessage(tabId, ping).catch(() => {
+    debug("No listener for screenshotTaken; skipping the progress overlay.")
+  })
+}
+
 async function handleCapture(
   message: CaptureMessage,
   tab: chrome.tabs.Tab
 ): Promise<CaptureResponse> {
-  const settings = await getSettings()
-
+  // Grab the pixels before doing anything else - notably before reading
+  // settings. Every await between the content script hiding its UI and this
+  // call is a window in which something can be painted into the screenshot,
+  // and a cold service worker makes that window wide enough to lose to.
   const screenshot = await chrome.tabs.captureVisibleTab(tab.windowId, {
     format: "png"
   })
@@ -369,6 +389,10 @@ async function handleCapture(
   if (!screenshot) {
     throw new Error("Chrome returned an empty screenshot.")
   }
+
+  notifyScreenshotTaken(tab.id)
+
+  const settings = await getSettings()
 
   const { canvas, width, height } = await cropAndResize(
     screenshot,
