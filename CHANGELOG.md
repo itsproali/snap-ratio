@@ -1,3 +1,14 @@
+## [1.2.0](https://github.com/itsproali/snap-ratio/compare/v1.1.0...v1.2.0) (2026-09-14)
+
+### Features
+
+* add optional iLoveIMG remote compression ([e0937bb](https://github.com/itsproali/snap-ratio/commit/e0937bb453c94299d8644b95c2c3d007edeccfd5))
+* add optional iLoveIMG remote compression ([f56d9eb](https://github.com/itsproali/snap-ratio/commit/f56d9eb1e9608f7a2525773c21183a8d677a685c))
+
+### Bug Fixes
+
+* keep the progress overlay out of the capture ([a147a99](https://github.com/itsproali/snap-ratio/commit/a147a99c4654512c09c0b7b7ec056656eb4d0b72))
+
 ## [1.1.0](https://github.com/itsproali/snap-ratio/compare/v1.0.0...v1.1.0) (2026-07-31)
 
 ### Features
