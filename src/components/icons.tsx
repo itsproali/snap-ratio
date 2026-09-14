@@ -85,6 +85,16 @@ export function IconPalette(props: IconProps) {
   )
 }
 
+export function IconCloudUp(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 13v8" />
+      <path d="m8 17 4-4 4 4" />
+      <path d="M20.9 18.1A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 3 16.3" />
+    </Svg>
+  )
+}
+
 export function IconRotateCcw(props: IconProps) {
   return (
     <Svg {...props}>

@@ -22,11 +22,23 @@ you visit, or how often you use the extension.
 Captured images are **not** written to storage, and are discarded as soon as
 the preview dialog closes.
 
-## Network activity
+## The one optional exception: iLoveIMG compression
 
-Snap Ratio makes **no network requests at all**. There is no server, no
-third-party service, and no telemetry. Cropping, resizing and encoding all
-happen locally in the extension's service worker using `OffscreenCanvas`.
+The **Extra compression** setting is **off by default**.
+
+If you turn it on and supply your own iLoveIMG API key, each captured image is
+uploaded to `api.iloveimg.com` (a third-party service operated by iLovePDF SL)
+so it can be compressed, then downloaded back. In that mode your screenshots
+leave your device.
+
+- The extension warns you about this in the settings panel before you enable it.
+- Only the image itself and your API key are sent. No URL, page title, or
+  browsing history is included.
+- Turning the setting off stops all network activity immediately.
+- iLoveIMG's own privacy policy applies to that data:
+  <https://www.iloveimg.com/privacy>
+
+If you never enable this setting, Snap Ratio makes no network requests at all.
 
 ## Permissions and why they are needed
 

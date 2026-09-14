@@ -24,8 +24,9 @@ TailwindCSS.
 - **Keyboard driven** — <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> starts a
   capture, <kbd>Enter</kbd> confirms, <kbd>Esc</kbd> cancels, arrow keys nudge
   (hold <kbd>Shift</kbd> for 10px steps).
-- **Fully local** — cropping, resizing and encoding all happen on-device with
-  `OffscreenCanvas`. The extension makes no network requests at all.
+- **Local by default** — cropping, resizing and encoding all happen on-device
+  with `OffscreenCanvas`. No network requests unless you explicitly opt in to
+  iLoveIMG compression with your own API key.
 
 ## Tech stack
 
@@ -123,6 +124,21 @@ Then load the unpacked extension:
 
 Everything else follows your saved settings. Open the **Settings** tab in the
 popup to change them; changes apply to the next capture with no reload.
+
+## Optional: iLoveIMG compression
+
+Off by default, and the extension is fully functional without it. To enable:
+
+1. Create a free account at <https://developer.ilovepdf.com/> and copy your
+   **public key**.
+2. Popup → **Settings** → **Extra compression** → toggle on and paste the key.
+
+The key is stored in `chrome.storage.sync` alongside your other settings.
+
+> With this enabled, each capture is uploaded to `api.iloveimg.com` for
+> compression, so screenshots leave the device. Leave it off to keep every
+> capture local. If the remote call fails or returns a larger file, the local
+> version is used instead — a capture is never lost to a third-party outage.
 
 ## Permissions
 

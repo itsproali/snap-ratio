@@ -161,12 +161,20 @@ Under **Store listing**:
 
 For the store icon, upload the pre-generated `store/icon-128.png`.
 
-Good screenshots to take (1280×800):
+Screenshots are already generated in [`store/screenshots/`](./store/screenshots),
+all exactly 1280×800. Upload them in this order:
 
-1. The popup's **Capture** tab over a real page.
-2. The selection overlay mid-drag, showing the ratio lock and dimensions.
-3. The popup's **Settings** tab.
-4. The result dialog with a captured thumbnail.
+| File | Shows |
+| --- | --- |
+| `01-overlay.png` | the selection frame locked to 16:9 on a live page |
+| `02-popup.png` | the Capture tab, quick ratio switching, filename preview |
+| `03-settings.png` | capture-area defaults: ratio, size, start position |
+| `04-quality.png` | output width, format, quality, max file size |
+| `05-result.png` | the result dialog, plus the privacy message |
+
+They are composed from the real built bundles rather than mockups, so they
+cannot drift from what ships. See [`store/README.md`](./store/README.md) for how
+to regenerate them after a UI change.
 
 ### 4. Privacy and permission disclosures
 
@@ -189,9 +197,14 @@ This is where most first submissions get rejected. Under **Privacy practices**:
 **Remote code** — answer **No**. Everything is bundled; there are no remote
 scripts, no `eval`, and the web font import was removed for exactly this reason.
 
-**Data usage** — tick nothing, and confirm all three certifications. Snap Ratio
-collects nothing and makes no network requests, so every category is a genuine
-"no". This is the single biggest reason the first review should go smoothly.
+**Data usage** — with the optional iLoveIMG compression shipped, the extension
+*can* transmit a screenshot to a third party, so you must tick **Website
+content** and explain that it is off by default, opt-in per user, and requires
+the user's own API key. Everything else stays unticked.
+
+> If a review is rejected over this, the fastest fix is to ship a build without
+> the integration: it is isolated to the settings entry, the background
+> workflow and the settings-panel card.
 
 **Privacy policy URL** — required. Publish [`PRIVACY.md`](./PRIVACY.md) at a
 stable public URL. Simplest option, no extra hosting:
