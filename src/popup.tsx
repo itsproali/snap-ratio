@@ -17,6 +17,7 @@ import {
   IconZap
 } from "@/components/icons"
 import { SettingsPanel } from "@/components/SettingsPanel"
+import { sendToContentScript } from "@/lib/inject"
 import type { ShowOverlayMessage } from "@/lib/messages"
 import {
   ASPECT_RATIO_PRESETS,
@@ -35,7 +36,14 @@ import "@/style.css"
 
 type Tab = "capture" | "settings"
 
-/** URL schemes where content scripts can never run. */
+/**
+ * URL schemes where the overlay can never run.
+ *
+ * `file:` is here because the manifest only matches http/https, so the content
+ * script is never injected into local files even when the user has ticked
+ * "Allow access to file URLs". Without it the popup would wave the page
+ * through and then fail on delivery.
+ */
 const BLOCKED_PROTOCOLS = [
   "chrome:",
   "chrome-extension:",
@@ -43,11 +51,19 @@ const BLOCKED_PROTOCOLS = [
   "edge:",
   "about:",
   "devtools:",
-  "view-source:"
+  "view-source:",
+  "file:"
 ]
 
-/** Chrome also blocks content scripts on its own web store. */
-const BLOCKED_HOSTS = ["chromewebstore.google.com", "chrome.google.com"]
+/**
+ * Chrome also blocks content scripts on its own web store.
+ *
+ * `chromewebstore.google.com` is the store end to end, so the whole host is
+ * off limits. The legacy `chrome.google.com` host still serves unrelated
+ * pages, so only its `/webstore` paths are.
+ */
+const BLOCKED_HOSTS = ["chromewebstore.google.com"]
+const LEGACY_WEBSTORE_HOST = "chrome.google.com"
 
 function isRestrictedUrl(rawUrl: string): boolean {
   try {
@@ -57,8 +73,12 @@ function isRestrictedUrl(rawUrl: string): boolean {
       return true
     }
 
+    if (BLOCKED_HOSTS.includes(url.hostname)) {
+      return true
+    }
+
     return (
-      BLOCKED_HOSTS.includes(url.hostname) &&
+      url.hostname === LEGACY_WEBSTORE_HOST &&
       url.pathname.startsWith("/webstore")
     )
   } catch {
@@ -550,36 +570,6 @@ function Footer({
       )}
     </footer>
   )
-}
-
-/* -------------------------------------------------------------- helpers */
-
-/**
- * Sends a message to the tab's content script, retrying once after a short
- * delay. Plasmo injects the script at `document_idle`, so a message fired
- * immediately after a navigation can land before the listener is registered.
- */
-async function sendToContentScript(
-  tabId: number,
-  message: ShowOverlayMessage
-): Promise<void> {
-  try {
-    await chrome.tabs.sendMessage(tabId, message)
-
-    return
-  } catch {
-    // Fall through to the retry below.
-  }
-
-  await new Promise((resolve) => setTimeout(resolve, 400))
-
-  try {
-    await chrome.tabs.sendMessage(tabId, message)
-  } catch {
-    throw new Error(
-      "Snap Ratio is not loaded on this tab yet. Reload the page and try again."
-    )
-  }
 }
 
 export default IndexPopup

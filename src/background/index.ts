@@ -12,6 +12,7 @@
  * their own API key.
  */
 
+import { sendToContentScript } from "@/lib/inject"
 import type {
   CaptureMessage,
   CaptureResponse,
@@ -524,9 +525,11 @@ chrome.commands?.onCommand.addListener(async (command) => {
   if (!tab?.id) return
 
   try {
-    await chrome.tabs.sendMessage(tab.id, { action: "commandStartCapture" })
+    // Injects the script first if the tab has none, so the shortcut still
+    // works on tabs that were open when the extension installed or updated.
+    await sendToContentScript(tab.id, { action: "commandStartCapture" })
   } catch {
-    // No content script on this tab (e.g. chrome:// page) - nothing to do.
-    debug("Keyboard shortcut ignored: no content script on this tab.")
+    // Chrome forbids extensions here (e.g. a chrome:// page) - nothing to do.
+    debug("Keyboard shortcut ignored: cannot run on this tab.")
   }
 })

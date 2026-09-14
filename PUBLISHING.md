@@ -192,6 +192,7 @@ This is where most first submissions get rejected. Under **Privacy practices**:
 | `activeTab` | Required to call `chrome.tabs.captureVisibleTab` on the tab the user explicitly invoked the extension on, in order to produce the screenshot they requested. |
 | `storage` | Stores the user's own capture preferences (aspect ratio, output size, format, quality, filename template) so they persist between captures. No user content is stored. |
 | `downloads` | Saves the finished image to the user's Downloads folder when they choose "Download" as the post-capture action. |
+| `scripting` | Re-injects the selection overlay into a tab that has no live copy of it. Chrome does not re-inject declarative content scripts into tabs that were already open when the extension installs or updates, so without this the user must reload every open tab after an update before they can capture. It only ever injects the extension's own bundled content script, on the tab the user invoked the extension on. |
 | Host permission (`http://*/*`, `https://*/*`) | The selection overlay is a content script that must render on whichever page the user wants to capture. It only draws the selection UI and reads the viewport dimensions needed to map the selection onto the screenshot; it does not read or transmit page content. |
 
 **Remote code** — answer **No**. Everything is bundled; there are no remote
